@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScreenKids — Screen Time Analysis</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple:        #6C47D8;
+      --purple-dark:   #4E2FB5;
+      --purple-light:  #EDE9FA;
+      --green-light:   #E1F5EE;
+      --green-dark:    #0F6E56;
+      --amber:         #BA7517;
+      --amber-light:   #FAEEDA;
+      --red:           #E24B4A;
+      --red-light:     #FCEBEB;
+      --red-dark:      #A32D2D;
+      --bg:            #F4F2FC;
+      --surface:       #ffffff;
+      --border:        rgba(108,71,216,0.15);
+      --border-strong: rgba(108,71,216,0.28);
+      --text:          #1a1a2e;
+      --text-muted:    #6b6b8a;
+      --radius:        10px;
+      --radius-lg:     16px;
+      --shadow:        0 2px 8px rgba(108,71,216,0.10), 0 8px 24px rgba(108,71,216,0.07);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ══════════════════════════════════════
+       INTRO PAGE
+    ══════════════════════════════════════ */
+    #intro-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #6C47D8 0%, #4E2FB5 55%, #3A1F99 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    .intro-logo {
+      width: 86px; height: 86px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 22px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+      border: 2px solid rgba(255,255,255,0.3);
+      font-size: 42px;
+    }
+
+    .intro-title {
+      font-size: 48px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -2px;
+      margin-bottom: 0.3rem;
+    }
+
+    .intro-tagline {
+      font-size: 15px;
+      color: rgba(255,255,255,0.72);
+      margin-bottom: 2rem;
+    }
+
+    .intro-card {
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem 2rem;
+      max-width: 700px;
+      width: 100%;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    .intro-card h2 { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 0.9rem; }
+
+    .intro-card p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.83);
+      line-height: 1.75;
+      margin-bottom: 0.8rem;
+    }
+
+    .intro-card p:last-child { margin-bottom: 0; }
+
+    .intro-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      max-width: 700px;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-item {
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--radius);
+      padding: 0.9rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .feat-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .feat-text h4 { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .feat-text p  { font-size: 12px; color: rgba(255,255,255,0.68); line-height: 1.5; }
+
+    .intro-warning {
+      background: rgba(255,220,100,0.14);
+      border: 1px solid rgba(255,220,100,0.32);
+      border-radius: var(--radius);
+      padding: 0.9rem 1.1rem;
+      max-width: 700px;
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 1.75rem;
+      text-align: left;
+    }
+
+    .intro-warning p { font-size: 13px; color: rgba(255,255,255,0.86); line-height: 1.6; }
+
+    .btn-enter {
+      background: #fff;
+      color: var(--purple-dark);
+      border: none;
+      padding: 14px 48px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      transition: all 0.2s;
+    }
+
+    .btn-enter:hover  { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.22); }
+    .btn-enter:active { transform: scale(0.98); }
+
+    /* ══════════════════════════════════════
+       MAIN APP
+    ══════════════════════════════════════ */
+    #app-page { display: none; }
+
+    /* HEADER */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(108,71,216,0.09);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      height: 60px;
+      flex-wrap: wrap;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+    }
+
+    .logo-box {
+      width: 38px; height: 38px;
+      background: var(--purple);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px;
+      flex-shrink: 0;
+    }
+
+    .logo-name { font-size: 18px; font-weight: 800; color: var(--purple); letter-spacing: -0.4px; }
+    .logo-sub  { font-size: 11px; color: var(--text-muted); }
+
+    nav { margin-left: auto; display: flex; gap: 3px; flex-wrap: wrap; }
+
+    .nav-btn {
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .nav-btn:hover  { background: var(--purple-light); color: var(--purple); }
+    .nav-btn.active { background: var(--purple); color: #fff; }
+
+    /* MAIN */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+    }
+
+    .tab-panel        { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 1.1rem; }
+
+    /* ══════════════════════════════════════
+       COLLECT — VERTICAL FORM + INFO PANEL
+    ══════════════════════════════════════ */
+    .collect-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    /* stack on mobile / tablet */
+    @media (max-width: 750px) {
+      .collect-layout { grid-template-columns: 1fr; }
+    }
+
+    .form-col { display: flex; flex-direction: column; gap: 12px; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .field input,
+    .field select {
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border-strong);
+      background: #FAFAFE;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+      width: 100%;
+      /* Fix for emoji rendering in selects on some browsers */
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .field input {
+      background-image: none;
+      -webkit-appearance: auto;
+      appearance: auto;
+      padding-right: 12px;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(108,71,216,0.11);
+      background-color: #fff;
+    }
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--purple);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+      margin-top: 2px;
+    }
+
+    .btn-primary:hover  { background: var(--purple-dark); }
+    .btn-primary:active { transform: scale(0.99); }
+
+    .msg     { margin-top: 9px; font-size: 13px; min-height: 18px; font-weight: 500; }
+    .msg.ok  { color: var(--green-dark); }
+    .msg.err { color: var(--red-dark); }
+
+    /* INFO PANEL */
+    .info-panel { display: flex; flex-direction: column; gap: 10px; }
+
+    .info-box {
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+    }
+
+    .info-box h4 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .info-box p  { font-size: 12.5px; line-height: 1.65; }
+
+    .box-purple { background: var(--purple-light); border-left: 4px solid var(--purple); }
+    .box-purple h4 { color: var(--purple-dark); }
+    .box-purple p  { color: var(--text-muted); }
+
+    .box-yellow { background: #FFF8E1; border-left: 4px solid #F9A825; }
+    .box-yellow h4 { color: #6D4C00; }
+    .box-yellow p  { color: #7A5900; }
+
+    .box-green { background: var(--green-light); border-left: 4px solid #2ECC71; }
+    .box-green h4 { color: var(--green-dark); }
+    .box-green p  { color: #1a5a40; }
+
+    /* RISK LEGEND */
+    .risk-legend {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 0.85rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .risk-label { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge-green { background: var(--green-light); color: var(--green-dark); }
+    .badge-amber { background: var(--amber-light); color: var(--amber); }
+    .badge-red   { background: var(--red-light);   color: var(--red-dark); }
+
+    /* ══════════════════════════════════════
+       RECORDS TABLE
+    ══════════════════════════════════════ */
+    .table-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .filter-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .filter-bar label { font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    .filter-bar select {
+      padding: 7px 30px 7px 10px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border-strong);
+      background: #FAFAFE;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .filter-bar select:focus { border-color: var(--purple); }
+
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    table       { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+    thead th {
+      padding: 10px 13px;
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: #F8F6FE;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 10px 13px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td      { background: #F8F6FE; }
+
+    .icon-btn {
+      background: none; border: none; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px;
+      color: var(--red); font-size: 12px; font-weight: 700;
+      transition: background 0.12s;
+    }
+
+    .icon-btn:hover { background: var(--red-light); }
+    .empty { text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 14px; }
+
+    /* ══════════════════════════════════════
+       STATISTICS
+    ══════════════════════════════════════ */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card .s-icon  { font-size: 18px; display: block; margin-bottom: 5px; }
+    .stat-card .s-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 5px; }
+    .stat-card .s-value { font-size: 26px; font-weight: 800; color: var(--purple); line-height: 1; }
+    .stat-card .s-unit  { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ══════════════════════════════════════
+       CHARTS
+    ══════════════════════════════════════ */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+    }
+
+    .chart-card.wide { grid-column: 1 / -1; }
+    .chart-label     { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 0.9rem; }
+    .chart-wrap      { position: relative; width: 100%; height: 240px; }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE — MOBILE
+    ══════════════════════════════════════ */
+    @media (max-width: 480px) {
+      .intro-features   { grid-template-columns: 1fr; }
+      .intro-title      { font-size: 34px; letter-spacing: -1px; }
+      .intro-card       { padding: 1.25rem; }
+      nav               { gap: 2px; }
+      .nav-btn          { padding: 6px 10px; font-size: 12px; }
+      .logo-sub         { display: none; }
+      main              { padding: 1rem 0.75rem; }
+      .chart-wrap       { height: 200px; }
+      .stat-card .s-value { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════
+     INTRO PAGE
+═══════════════════════════════════ -->
+<div id="intro-page">
+
+  <div class="intro-logo">👶</div>
+  <div class="intro-title">ScreenKids</div>
+  <div class="intro-tagline">Children's screen time — data collection &amp; statistical analysis</div>
+
+  <div class="intro-card">
+    <h2>👨‍👩‍👧‍👦 Dear parents, welcome to ScreenKids!</h2>
+    <p>
+      In today's digital world, screens are everywhere — smartphones, tablets, computers,
+      televisions and video game consoles surround our children from a very young age.
+      While technology offers real educational opportunities, excessive screen time
+      can affect children's health, sleep, concentration and social development.
+    </p>
+    <p>
+      <strong style="color:#fff;">ScreenKids</strong> helps you
+      <strong style="color:#fff;">track, understand and analyse</strong> how much time your children
+      spend in front of screens each day. By collecting real data, you can identify patterns
+      and make informed decisions for your family.
+    </p>
+    <p>
+      The WHO 🏥 recommends <strong style="color:#fff;">no more than 60 minutes per day</strong>
+      for children aged 3–5. This app classifies risk levels automatically using those guidelines.
+    </p>
+  </div>
+
+  <div class="intro-features">
+    <div class="feature-item">
+      <div class="feat-icon">📋</div>
+      <div class="feat-text">
+        <h4>Data Collection</h4>
+        <p>Record daily screen time, device, activity and day of week quickly.</p>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feat-icon">📐</div>
+      <div class="feat-text">
+        <h4>Descriptive Statistics</h4>
+        <p>Mean, median, mode, standard deviation, quartiles — computed automatically.</p>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feat-icon">📊</div>
+      <div class="feat-text">
+        <h4>Histogram</h4>
+        <p>See how screen time is distributed across all recorded children.</p>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feat-icon">🔵</div>
+      <div class="feat-text">
+        <h4>Scatter Plot</h4>
+        <p>Explore the relationship between children's age and screen time.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="intro-warning">
+    <span style="font-size:20px;">🔒</span>
+    <p>All data is stored <strong>locally on your device only</strong>. No personal information is ever sent to any server. Your privacy is fully protected.</p>
+  </div>
+
+  <button class="btn-enter" onclick="enterApp()">🚀 Enter the application</button>
+
+</div>
+
+
+<!-- ═══════════════════════════════════
+     MAIN APP
+═══════════════════════════════════ -->
+<div id="app-page">
+
+  <header>
+    <div class="header-inner">
+      <div class="logo-wrap" onclick="backToIntro()" title="Back to welcome page">
+        <div class="logo-box">📱</div>
+        <div>
+          <div class="logo-name">ScreenKids</div>
+          <div class="logo-sub">Children's screen time analysis</div>
+        </div>
+      </div>
+      <nav>
+        <button class="nav-btn active" onclick="switchTab('collect', this)">📋 Collect</button>
+        <button class="nav-btn"        onclick="switchTab('records', this)">🗂️ Records</button>
+        <button class="nav-btn"        onclick="switchTab('stats',   this)">📐 Stats</button>
+        <button class="nav-btn"        onclick="switchTab('charts',  this)">📈 Charts</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- TAB 1 — COLLECT -->
+    <div id="tab-collect" class="tab-panel active">
+
+      <div class="risk-legend">
+        <span class="risk-label">⚠️ Risk levels:</span>
+        <span class="badge badge-green">🟢 Low — ≤ 60 min/day</span>
+        <span class="badge badge-amber">🟡 Moderate — 61–120 min/day</span>
+        <span class="badge badge-red">🔴 High — &gt; 120 min/day</span>
+      </div>
+
+      <div class="collect-layout">
+
+        <!-- FORM — vertical stack -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title">➕ Add a new observation</div>
+          <div class="form-col">
+
+            <div class="field">
+              <label>Child's name</label>
+              <input id="f-name" type="text" placeholder="e.g. Emma">
+            </div>
+
+            <div class="field">
+              <label>Age (years)</label>
+              <input id="f-age" type="number" min="1" max="17" placeholder="e.g. 9">
+            </div>
+
+            <div class="field">
+              <label>Screen time (minutes)</label>
+              <input id="f-time" type="number" min="0" max="1440" placeholder="e.g. 90">
+            </div>
+
+            <div class="field">
+              <label>Device type</label>
+              <select id="f-device">
+                <option value="">Select a device...</option>
+                <option value="Smartphone">Smartphone</option>
+                <option value="Tablet">Tablet</option>
+                <option value="Computer">Computer</option>
+                <option value="TV">TV</option>
+                <option value="Video game console">Video game console</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Day of week</label>
+              <select id="f-day">
+                <option value="">Select a day...</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Activity type</label>
+              <select id="f-activity">
+                <option value="">Select an activity...</option>
+                <option value="Educational">Educational</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Social media">Social media</option>
+                <option value="Gaming">Gaming</option>
+                <option value="Mixed">Mixed</option>
+              </select>
+            </div>
+
+          </div>
+
+          <button class="btn-primary" onclick="addRecord()">✅ Add record</button>
+          <div id="collect-msg" class="msg"></div>
+        </div>
+
+        <!-- INFO PANEL -->
+        <div class="info-panel">
+          <div class="info-box box-purple">
+            <h4>📖 How to use</h4>
+            <p>Fill in all six fields for each observation then click <strong>Add record</strong>. Add as many records as you want — for different children, different days or different devices. The more data, the richer the analysis!</p>
+          </div>
+          <div class="info-box box-yellow">
+            <h4>🏥 WHO Recommendations</h4>
+            <p>
+              <strong>Under 2 years:</strong> Avoid screens (except video calls).<br>
+              <strong>2–4 years:</strong> Max 1 hour/day of quality content.<br>
+              <strong>5–17 years:</strong> Limit recreational use — prioritise sleep, physical activity and social interaction.
+            </p>
+          </div>
+          <div class="info-box box-green">
+            <h4>💡 Did you know?</h4>
+            <p>Children with more than 2 hours/day of screen time show higher rates of sleep disturbances, attention difficulties and lower academic performance. Tracking is the first step toward a healthier balance!</p>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /#tab-collect -->
+
+
+    <!-- TAB 2 — RECORDS -->
+    <div id="tab-records" class="tab-panel">
+      <div class="card">
+        <div class="table-header-row">
+          <div class="card-title" style="margin:0;">
+            🗂️ All records
+            <span id="record-count" style="color:var(--text-muted); font-weight:400; font-size:13px;"></span>
+          </div>
+          <div class="filter-bar">
+            <label>Filter:</label>
+            <select id="filter-device" onchange="renderTable()">
+              <option value="">All devices</option>
+              <option value="Smartphone">Smartphone</option>
+              <option value="Tablet">Tablet</option>
+              <option value="Computer">Computer</option>
+              <option value="TV">TV</option>
+              <option value="Video game console">Video game console</option>
+            </select>
+            <select id="filter-activity" onchange="renderTable()">
+              <option value="">All activities</option>
+              <option value="Educational">Educational</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Social media">Social media</option>
+              <option value="Gaming">Gaming</option>
+              <option value="Mixed">Mixed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Time (min)</th>
+                <th>Device</th>
+                <th>Day</th>
+                <th>Activity</th>
+                <th>Risk</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="records-tbody">
+              <tr><td colspan="9" class="empty">No records yet — go to the Collect tab to add data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /#tab-records -->
+
+
+    <!-- TAB 3 — STATISTICS -->
+    <div id="tab-stats" class="tab-panel">
+
+      <div id="stats-empty" class="card" style="display:none;">
+        <div class="empty">No data yet. Add records in the Collect tab first.</div>
+      </div>
+
+      <div id="stats-content">
+        <div class="stat-grid" id="stat-cards"></div>
+
+        <div class="card">
+          <div class="card-title">📐 Descriptive statistics — screen time (minutes)</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Statistic</th><th>Value</th></tr></thead>
+              <tbody id="stats-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Average by device</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Device</th><th>Avg (min)</th><th>n</th></tr></thead>
+                <tbody id="device-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Average by activity</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Activity</th><th>Avg (min)</th><th>n</th></tr></thead>
+                <tbody id="activity-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /#tab-stats -->
+
+
+    <!-- TAB 4 — CHARTS -->
+    <div id="tab-charts" class="tab-panel">
+
+      <div id="charts-empty" class="card" style="display:none;">
+        <div class="empty">Add at least 2 records to generate charts.</div>
+      </div>
+
+      <div id="charts-content" class="charts-grid">
+        <div class="chart-card wide">
+          <div class="chart-label">📊 Histogram — distribution of screen time (minutes)</div>
+          <div class="chart-wrap"><canvas id="hist-chart"></canvas></div>
+        </div>
+        <div class="chart-card wide">
+          <div class="chart-label">🔵 Scatter plot (nuage de points) — age vs screen time</div>
+          <div class="chart-wrap"><canvas id="scatter-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Average screen time by device</div>
+          <div class="chart-wrap"><canvas id="bar-device-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Average screen time by activity</div>
+          <div class="chart-wrap"><canvas id="bar-activity-chart"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /#tab-charts -->
+
+  </main>
+</div><!-- /#app-page -->
+
+
+<script>
+  /* ─────────────────────────────
+     DATA — localStorage
+  ───────────────────────────── */
+  let records = [];
+  let nextId  = 1;
+
+  function loadFromStorage() {
+    try {
+      const saved = localStorage.getItem('screenkids_records');
+      if (saved) {
+        records = JSON.parse(saved);
+        nextId  = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
+      }
+    } catch (e) { records = []; }
+  }
+
+  function saveToStorage() {
+    try { localStorage.setItem('screenkids_records', JSON.stringify(records)); }
+    catch (e) { console.error('Storage error:', e); }
+  }
+
+  /* ─────────────────────────────
+     NAVIGATION
+  ───────────────────────────── */
+  function enterApp() {
+    document.getElementById('intro-page').style.display = 'none';
+    document.getElementById('app-page').style.display   = 'block';
+    renderTable();
+  }
+
+  function backToIntro() {
+    document.getElementById('app-page').style.display   = 'none';
+    document.getElementById('intro-page').style.display = 'flex';
+  }
+
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+    if (id === 'records') renderTable();
+    if (id === 'stats')   renderStats();
+    if (id === 'charts')  renderCharts();
+  }
+
+  /* ─────────────────────────────
+     BADGE
+  ───────────────────────────── */
+  function riskBadge(min) {
+    if (min <= 60)  return '<span class="badge badge-green">🟢 Low</span>';
+    if (min <= 120) return '<span class="badge badge-amber">🟡 Moderate</span>';
+    return '<span class="badge badge-red">🔴 High</span>';
+  }
+
+  /* ─────────────────────────────
+     ADD RECORD
+  ───────────────────────────── */
+  function addRecord() {
+    const msg      = document.getElementById('collect-msg');
+    const name     = document.getElementById('f-name').value.trim();
+    const age      = parseInt(document.getElementById('f-age').value);
+    const time     = parseInt(document.getElementById('f-time').value);
+    const device   = document.getElementById('f-device').value;
+    const day      = document.getElementById('f-day').value;
+    const activity = document.getElementById('f-activity').value;
+
+    if (!name || isNaN(age) || isNaN(time) || !device || !day || !activity) {
+      msg.className = 'msg err';
+      msg.textContent = '⚠️ Please fill in all six fields before saving.';
+      return;
+    }
+    if (age < 1 || age > 17) {
+      msg.className = 'msg err';
+      msg.textContent = '⚠️ Age must be between 1 and 17 years.';
+      return;
+    }
+    if (time < 0 || time > 1440) {
+      msg.className = 'msg err';
+      msg.textContent = '⚠️ Screen time must be between 0 and 1440 minutes.';
+      return;
+    }
+
+    records.push({ id: nextId++, name, age, time_minutes: time, device, day, activity });
+    saveToStorage();
+
+    ['f-name','f-age','f-time'].forEach(id => { document.getElementById(id).value = ''; });
+    ['f-device','f-day','f-activity'].forEach(id => { document.getElementById(id).value = ''; });
+
+    msg.className = 'msg ok';
+    msg.textContent = '✅ Record saved! Total: ' + records.length + ' record(s).';
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+  }
+
+  /* ─────────────────────────────
+     RENDER TABLE
+  ───────────────────────────── */
+  function renderTable() {
+    const fd = document.getElementById('filter-device').value;
+    const fa = document.getElementById('filter-activity').value;
+    const filtered = records.filter(r =>
+      (!fd || r.device === fd) && (!fa || r.activity === fa)
+    );
+    document.getElementById('record-count').textContent =
+      '(' + filtered.length + ' record' + (filtered.length !== 1 ? 's' : '') + ')';
+
+    const tbody = document.getElementById('records-tbody');
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">No records found. Add data in the Collect tab.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = filtered.map((r, i) => `
+      <tr>
+        <td style="color:var(--text-muted);font-weight:600">${i + 1}</td>
+        <td><strong>${r.name}</strong></td>
+        <td>${r.age} yrs</td>
+        <td><strong>${r.time_minutes}</strong></td>
+        <td>${r.device}</td>
+        <td>${r.day}</td>
+        <td>${r.activity}</td>
+        <td>${riskBadge(r.time_minutes)}</td>
+        <td><button class="icon-btn" onclick="deleteRecord(${r.id})">✕ Delete</button></td>
+      </tr>`).join('');
+  }
+
+  /* ─────────────────────────────
+     DELETE RECORD
+  ───────────────────────────── */
+  function deleteRecord(id) {
+    if (!confirm('Delete this record? This cannot be undone.')) return;
+    records = records.filter(r => r.id !== id);
+    saveToStorage();
+    renderTable();
+  }
+
+  /* ─────────────────────────────
+     COMPUTE STATS
+  ───────────────────────────── */
+  function computeStats() {
+    if (records.length === 0) return null;
+    const times = records.map(r => r.time_minutes).sort((a, b) => a - b);
+    const ages  = records.map(r => r.age);
+    const n     = times.length;
+    const mean     = times.reduce((a, b) => a + b, 0) / n;
+    const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n;
+    const std      = Math.sqrt(variance);
+    const median   = n % 2 === 0 ? (times[n/2-1] + times[n/2]) / 2 : times[Math.floor(n/2)];
+    const q1       = times[Math.floor(n * 0.25)];
+    const q3       = times[Math.floor(n * 0.75)];
+    const freq = {};
+    times.forEach(t => { freq[t] = (freq[t] || 0) + 1; });
+    const maxF = Math.max(...Object.values(freq));
+    const mode = Object.keys(freq).filter(k => freq[k] === maxF).map(Number);
+    const devices  = [...new Set(records.map(r => r.device))];
+    const byDevice = devices.map(d => {
+      const ts = records.filter(r => r.device === d).map(r => r.time_minutes);
+      return { device: d, avg: parseFloat((ts.reduce((a,b)=>a+b,0)/ts.length).toFixed(1)), count: ts.length };
+    });
+    const activities = [...new Set(records.map(r => r.activity))];
+    const byActivity = activities.map(a => {
+      const ts = records.filter(r => r.activity === a).map(r => r.time_minutes);
+      return { activity: a, avg: parseFloat((ts.reduce((a,b)=>a+b,0)/ts.length).toFixed(1)), count: ts.length };
+    });
+    const minT = times[0], maxT = times[n-1];
+    const binCount = Math.min(7, n);
+    const binSize  = Math.max(1, Math.ceil((maxT - minT + 1) / binCount));
+    const histData = Array(binCount).fill(0);
+    const histLabels = [];
+    for (let i = 0; i < binCount; i++) {
+      histLabels.push(`${minT + i*binSize}–${minT + (i+1)*binSize - 1}`);
+    }
+    times.forEach(t => { histData[Math.min(binCount-1, Math.floor((t-minT)/binSize))]++; });
+    return {
+      n, mean: parseFloat(mean.toFixed(2)), median: parseFloat(median.toFixed(2)),
+      mode, std: parseFloat(std.toFixed(2)), variance: parseFloat(variance.toFixed(2)),
+      min: times[0], max: times[n-1], q1, q3, iqr: q3-q1,
+      meanAge: parseFloat((ages.reduce((a,b)=>a+b,0)/n).toFixed(1)),
+      minAge: Math.min(...ages), maxAge: Math.max(...ages),
+      byDevice, byActivity,
+      histogram: { labels: histLabels, data: histData },
+      scatter: records.map(r => ({ x: r.age, y: r.time_minutes }))
+    };
+  }
+
+  /* ─────────────────────────────
+     RENDER STATS
+  ───────────────────────────── */
+  function renderStats() {
+    const s = computeStats();
+    const empty   = document.getElementById('stats-empty');
+    const content = document.getElementById('stats-content');
+    if (!s) { empty.style.display = ''; content.style.display = 'none'; return; }
+    empty.style.display = 'none'; content.style.display = '';
+
+    document.getElementById('stat-cards').innerHTML = [
+      ['📋','n (records)', s.n,      ''],
+      ['📊','Mean',        s.mean,   'min'],
+      ['📏','Median',      s.median, 'min'],
+      ['📐','Std dev',     s.std,    'min'],
+      ['⬇️','Min',         s.min,    'min'],
+      ['⬆️','Max',         s.max,    'min'],
+    ].map(([icon, label, value, unit]) => `
+      <div class="stat-card">
+        <span class="s-icon">${icon}</span>
+        <div class="s-label">${label}</div>
+        <div class="s-value">${value}</div>
+        <div class="s-unit">${unit}</div>
+      </div>`).join('');
+
+    document.getElementById('stats-tbody').innerHTML = [
+      ['Sample size (n)',                  s.n],
+      ['Mean (moyenne)',                   s.mean    + ' min'],
+      ['Median (médiane)',                 s.median  + ' min'],
+      ['Mode',                             s.mode.join(', ') + ' min'],
+      ['Standard deviation (écart-type)', s.std     + ' min'],
+      ['Variance',                         s.variance],
+      ['Minimum',                          s.min     + ' min'],
+      ['Maximum',                          s.max     + ' min'],
+      ['Q1 — 25th percentile',             s.q1      + ' min'],
+      ['Q3 — 75th percentile',             s.q3      + ' min'],
+      ['IQR (Q3 – Q1)',                    s.iqr     + ' min'],
+      ['Mean age',                         s.meanAge + ' years'],
+      ['Age range',                        s.minAge  + ' – ' + s.maxAge + ' years'],
+    ].map(([k, v]) => `
+      <tr>
+        <td style="color:var(--text-muted)">${k}</td>
+        <td style="font-weight:700;color:var(--purple)">${v}</td>
+      </tr>`).join('');
+
+    document.getElementById('device-tbody').innerHTML = s.byDevice.map(d =>
+      `<tr><td>${d.device}</td><td style="font-weight:700">${d.avg}</td><td style="color:var(--text-muted)">${d.count}</td></tr>`
+    ).join('');
+    document.getElementById('activity-tbody').innerHTML = s.byActivity.map(a =>
+      `<tr><td>${a.activity}</td><td style="font-weight:700">${a.avg}</td><td style="color:var(--text-muted)">${a.count}</td></tr>`
+    ).join('');
+  }
+
+  /* ─────────────────────────────
+     RENDER CHARTS
+  ───────────────────────────── */
+  let histChart, scatterChart, barDeviceChart, barActivityChart;
+
+  function renderCharts() {
+    const s = computeStats();
+    const empty   = document.getElementById('charts-empty');
+    const content = document.getElementById('charts-content');
+    if (!s || s.n < 2) { empty.style.display = ''; content.style.display = 'none'; return; }
+    empty.style.display = 'none'; content.style.display = 'grid';
+
+    if (histChart)        histChart.destroy();
+    if (scatterChart)     scatterChart.destroy();
+    if (barDeviceChart)   barDeviceChart.destroy();
+    if (barActivityChart) barActivityChart.destroy();
+
+    const COLORS = ['#6C47D8','#378ADD','#1D9E75','#E08C2C','#E24B4A','#9B59B6','#2ECC71'];
+
+    histChart = new Chart(document.getElementById('hist-chart'), {
+      type: 'bar',
+      data: { labels: s.histogram.labels, datasets: [{ label: 'Children', data: s.histogram.data,
+        backgroundColor: 'rgba(108,71,216,0.65)', borderColor: '#6C47D8', borderWidth: 2, borderRadius: 5 }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'Screen time range (minutes)', font: { weight: '600' } }, ticks: { maxRotation: 30 } },
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'Number of children', font: { weight: '600' } } }
+        }
+      }
+    });
+
+    scatterChart = new Chart(document.getElementById('scatter-chart'), {
+      type: 'scatter',
+      data: { datasets: [{ label: 'Child', data: s.scatter.map(p => ({ x: p.x, y: p.y })),
+        backgroundColor: 'rgba(108,71,216,0.65)', borderColor: '#6C47D8', pointRadius: 7, pointHoverRadius: 9, borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'Age (years)', font: { weight: '700' } } },
+          y: { title: { display: true, text: 'Screen time (minutes)', font: { weight: '700' } }, beginAtZero: true }
+        }
+      }
+    });
+
+    barDeviceChart = new Chart(document.getElementById('bar-device-chart'), {
+      type: 'bar',
+      data: { labels: s.byDevice.map(d => d.device),
+        datasets: [{ label: 'Avg (min)', data: s.byDevice.map(d => d.avg),
+          backgroundColor: COLORS, borderRadius: 5, borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes' } } }
+      }
+    });
+
+    barActivityChart = new Chart(document.getElementById('bar-activity-chart'), {
+      type: 'bar',
+      data: { labels: s.byActivity.map(a => a.activity),
+        datasets: [{ label: 'Avg (min)', data: s.byActivity.map(a => a.avg),
+          backgroundColor: COLORS.slice().reverse(), borderRadius: 5, borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes' } } }
+      }
+    });
+  }
+
+  /* ─────────────────────────────
+     INIT
+  ───────────────────────────── */
+  loadFromStorage();
+</script>
+</body>
+</html>
